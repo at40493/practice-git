@@ -2,11 +2,15 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#include <linux/types.h>
-#include <linux/stddef.h>
-#include <linux/poison.h>
-#include <linux/const.h>
-#include <linux/kernel.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+
+//#include <linux/types.h>
+//#include <linux/stddef.h>
+//#include <linux/poison.h>
+//#include <linux/const.h>
+//#include <linux/kernel.h>
 
 /*
  * Simple doubly linked list implementation.
@@ -18,10 +22,46 @@
  * using the generic single-entry routines.
  */
 
+
+#ifdef CONFIG_ILLEGAL_POINTER_VALUE
+# define POISON_POINTER_DELTA _AC(CONFIG_ILLEGAL_POINTER_VALUE, UL)
+#else
+# define POISON_POINTER_DELTA 0
+#endif
+
+/*
+ * These are non-NULL pointers that will result in page faults
+ * under normal circumstances, used to verify that nobody uses
+ * non-initialized list entries.
+ */
+
+#define LIST_POISON1  ((void *) 0x00100100 + POISON_POINTER_DELTA)
+#define LIST_POISON2  ((void *) 0x00200200 + POISON_POINTER_DELTA)
+
+
+
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
+
+// The hlist_head
+struct hlist_head {
+    struct hlist_node *first;
+};
+
+// The hlist_node
+struct hlist_node {
+    struct hlist_node *next, **pprev;
+};
+
+
+// The list head
+struct list_head{
+
+        struct list_head *next, *prev;
+};
+
 
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
@@ -63,7 +103,7 @@ static inline void __list_add(struct list_head *new,
 	next->prev = new;
 	new->next = next;
 	new->prev = prev;
-	WRITE_ONCE(prev->next, new);
+	prev->next= new;
 }
 
 /**
@@ -103,7 +143,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
 static inline void __list_del(struct list_head * prev, struct list_head * next)
 {
 	next->prev = prev;
-	WRITE_ONCE(prev->next, next);
+	prev->next = next;
 }
 
 /**
@@ -364,6 +404,11 @@ static inline void list_splice_tail_init(struct list_head *list,
  */
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
+#define offsetof(TYPE, MEMBER) ((unsigned int) &((TYPE *)0)->MEMBER)
+
+#define container_of(ptr, type, member) ({                      \
+        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+               (type *)( (char *)__mptr - offsetof(type,member) );})
 
 /**
  * list_first_entry - get the first element from a list
