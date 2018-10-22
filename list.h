@@ -5,7 +5,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
-
+#include<stddef.h> // offsetof
 //#include <linux/types.h>
 //#include <linux/stddef.h>
 //#include <linux/poison.h>
@@ -65,7 +65,7 @@ struct list_head{
 
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
-	WRITE_ONCE(list->next, list);
+	list->next = list;
 	list->prev = list;
 }
 
@@ -103,7 +103,7 @@ static inline void __list_add(struct list_head *new,
 	next->prev = new;
 	new->next = next;
 	new->prev = prev;
-	prev->next= new;
+	prev->next = new;
 }
 
 /**
@@ -240,7 +240,7 @@ static inline int list_is_last(const struct list_head *list,
  */
 static inline int list_empty(const struct list_head *head)
 {
-	return READ_ONCE(head->next) == head;
+	return head->next == head;
 }
 
 /**
@@ -404,11 +404,30 @@ static inline void list_splice_tail_init(struct list_head *list,
  */
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
-#define offsetof(TYPE, MEMBER) ((unsigned int) &((TYPE *)0)->MEMBER)
+//#define offsetof(TYPE, MEMBER) ((unsigned int) &((TYPE *)0)->MEMBER)
 
-#define container_of(ptr, type, member) ({                      \
+//#define container_of(ptr, type, member) ({                      \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
                (type *)( (char *)__mptr - offsetof(type,member) );})
+
+
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the member.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+ */
+#define container_of(ptr, type, member) ({				\
+	void *__mptr = (void *)(ptr);					\
+	((type *)(__mptr - offsetof(type, member))); })
+	//BUILD_BUG_ON_MSG(!__same_type(*(ptr), ((type *)0)->member) &&	\
+			 !__same_type(*(ptr), void),			\
+			 "pointer type mismatch in container_of()");	\
+	
+
+
+
 
 /**
  * list_first_entry - get the first element from a list
@@ -683,7 +702,7 @@ static inline int hlist_unhashed(const struct hlist_node *h)
 
 static inline int hlist_empty(const struct hlist_head *h)
 {
-	return !READ_ONCE(h->first);
+	return !h->first;
 }
 
 static inline void __hlist_del(struct hlist_node *n)
@@ -691,7 +710,8 @@ static inline void __hlist_del(struct hlist_node *n)
 	struct hlist_node *next = n->next;
 	struct hlist_node **pprev = n->pprev;
 
-	WRITE_ONCE(*pprev, next);
+	//WRITE_ONCE(*pprev, next);
+	*pprev =next;
 	if (next)
 		next->pprev = pprev;
 }
@@ -717,7 +737,8 @@ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 	n->next = first;
 	if (first)
 		first->pprev = &n->next;
-	WRITE_ONCE(h->first, n);
+	//WRITE_ONCE(h->first, n);
+	h->first = n;
 	n->pprev = &h->first;
 }
 
@@ -728,14 +749,17 @@ static inline void hlist_add_before(struct hlist_node *n,
 	n->pprev = next->pprev;
 	n->next = next;
 	next->pprev = &n->next;
-	WRITE_ONCE(*(n->pprev), n);
+	//WRITE_ONCE(*(n->pprev), n);
+	*(n->pprev) = n;
+	
 }
 
 static inline void hlist_add_behind(struct hlist_node *n,
 				    struct hlist_node *prev)
 {
 	n->next = prev->next;
-	WRITE_ONCE(prev->next, n);
+	//WRITE_ONCE(prev->next, n);
+	prev->next = n;
 	n->pprev = &prev->next;
 
 	if (n->next)
