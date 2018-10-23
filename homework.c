@@ -9,7 +9,7 @@
 
 struct Linked_list {
 
-	char str[128] ;
+	char *str ;
 	struct list_head list;
 };
 
@@ -19,9 +19,11 @@ int main()
 	LIST_HEAD(head); // Create the list head.
 	struct Linked_list *link_list, *link_list_match ;
 	struct list_head *list_head_iterator, *list_head_temp;
-	char str[128], *str_token = NULL, *str_token_next = NULL, emptyStr = '\0';
+	char *str = NULL, *str_token = NULL, *str_token_next = NULL, emptyStr = '\0';
 	char *saveptr1, *endptr;
-	FILE *fptr ;
+	size_t len = 0;
+	ssize_t read;
+	FILE *fptr;
 
 	// Check file exist.
 	if((fptr = fopen("input.txt", "r")) == NULL) {
@@ -30,8 +32,8 @@ int main()
 	}
 
 	errno = 0 ; /* To distinguish success/failure after call */
-	while(fgets(str, 128, fptr) != NULL) {	// Scan the intput file
-
+	while((read = getline(&str, &len, fptr)) != -1) {	// Scan the intput file
+		//printf("Retrieved line of length %zu :\n", read);
 		str_token = strtok_r(str, " \n", &saveptr1); // Split the string.
 
 		if(str_token == NULL) // Check str_token is NULL or not.
@@ -41,8 +43,9 @@ int main()
 			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the string.
 			if(str_token != NULL) {
 				link_list = malloc(sizeof(struct Linked_list));
-				if(link_list) { // link list not NULL
-					strncpy(link_list->str, str_token, strlen(str_token) + 1); // Convert char *str_token to char str[]
+				link_list->str = malloc((strlen(str_token) + 1) * sizeof(char *));
+				if(link_list && link_list->str) { // link list not NULL
+					strcpy(link_list->str, str_token); // Convert char *str_token to char str[]
 
 					//tmp -> str = pch ;
 					list_add_tail(&link_list->list, &head);
@@ -77,14 +80,16 @@ int main()
 					// Find the string which wants to delete.
 					if(!strcmp(link_list->str, str_token)) {
 						list_del(&link_list->list);
+						free(link_list->str); // Free the memory.
 						free(link_list); // Free the memory
+
 						break;
 					}
 				}
 			}
 		} else if(!strcmp(str_token, "insert")) { //insert <match> <str>: 在找到的match前，加入str
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
-			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str.
+			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str. <match>
+			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str. <str>
 
 			if(str_token != NULL && str_token_next != NULL) { // Check the insert format
 				list_for_each(list_head_iterator, &head) {
@@ -95,8 +100,9 @@ int main()
 						//str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
 
 						link_list = malloc(sizeof(struct Linked_list));
-						if(link_list) { // link_list not NULL
-							strncpy(link_list->str, str_token_next, strlen(str_token_next) + 1); // Convert char *str_token to char str[]
+						link_list->str = malloc((strlen(str_token_next) + 1) * sizeof(char *));
+						if(link_list && link_list->str) { // link_list not NULL
+							strcpy(link_list->str, str_token_next); // Convert char *str_token to char str[]
 
 							list_add_tail(&link_list->list, &link_list_match->list); // list_add_tail(new,head)
 							break;
@@ -110,11 +116,12 @@ int main()
 				}
 			}
 		} else if(!strcmp(str_token, "append")) {  //append <match> <str>: 找到的match後，加入str
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
-			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str.
+			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str <match>
+			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str <str>
+
 			if(str_token != NULL && str_token_next != NULL) { // Check the append format
 
-				//fprintf(stderr, "1 str_token = %s\n", str_token);
+				//fprintf(stderr, "1 str_token = %d\n", sizeof(str));
 				//fprintf(stderr, "1 str_token = %s\n", str_token_next);
 
 				list_for_each(list_head_iterator, &head) {
@@ -127,12 +134,14 @@ int main()
 						//fprintf(stderr, "2 str_token = %s\n", str_token);
 
 						link_list = malloc(sizeof(struct Linked_list));
-						if(link_list) { // link_list not NULL
+						link_list->str = malloc((strlen(str_token_next) + 1) * sizeof(char *));
+
+						if(link_list && link_list->str) { // link_list not NULL
 							//printf("%s \n",str_token);
 							//printf("%d \n",strlen(str_token)+1);
 							// 重設所有字元為空字元
 							//memset(link_list->str, '\0', sizeof(link_list->str));
-							strncpy(link_list->str, str_token_next, strlen(str_token_next) + 1); // Convert char *str_token to char str[]
+							strcpy(link_list->str, str_token_next); // Convert char *str_token to char str[]
 							//strncat(emptyStr, link_list->str, strlen((link_list->str)-1));
 							//link_list_match = list_next_entry(link_list_match, list);
 							list_add(&link_list->list, &link_list_match->list); // list_add(new,head)
@@ -152,13 +161,16 @@ int main()
 
 
 	fclose(fptr); // Close file.
+	free(str); // Free the memory.
 
 	fprintf(stderr, "Print result : \n");
 	list_for_each(list_head_iterator, &head) {
 
 		link_list = list_entry(list_head_iterator, struct Linked_list, list);
 		fprintf(stderr, "%s \n", link_list->str);
+		free(link_list->str); // Free the memory.
 		free(link_list); // Free the memory.
+
 	}
 
 
