@@ -1,10 +1,10 @@
 # practice-git
 
 
-Makefile - Use make command to makefile.(Input: input.txt, Output: output.txt)
-homework.c - Main program, use stdin to input data, and it have add, 
+	Makefile - Use make command to makefile.(Input: input.txt, Output: output.txt)
+	homework.c - Main program, use stdin to input data, and it have add, 
 			 insert, append and del option, print the output result to stdout.
-list.h - The <linux/list.h> header v4.18.14.
+	list.h - The <linux/list.h> header v4.18.14.
 
 Usage:
 	
