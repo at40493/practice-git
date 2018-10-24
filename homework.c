@@ -13,7 +13,7 @@ struct Linked_list {
 	struct list_head list;
 };
 
-int main()
+int main(int argc, char *argv[])
 {
 
 	LIST_HEAD(head); // Create the list head.
@@ -24,16 +24,22 @@ int main()
 	size_t len = 0;
 	ssize_t read;
 	FILE *fptr;
-
-	// Check file exist.
-	if((fptr = fopen("input.txt", "r")) == NULL) {
-		printf("open_file_error");
+	/*
+	if(argc == 2) {
+		fprintf(stderr, "Usage: ./hellomake  [Input file name]\n");
 		exit(1);
 	}
-
+	//fprintf(stderr,"Input file : %d\n",argc);
+	fprintf(stderr, "Input file : %s\n", argv[1]);
+	// Check file exist.
+	if((fptr = fopen(argv[1], "r")) == NULL) {
+		printf("Open_file_error\n");
+		exit(1);
+	}
+	*/
 	errno = 0 ; /* To distinguish success/failure after call */
-	while((read = getline(&str, &len, fptr)) != -1) {	// Scan the intput file
-		//printf("Retrieved line of length %zu :\n", read);
+	while((read = getline(&str, &len, stdin)) != -1) {	// Scan the intput file
+		//fprintf(stderr, "Retrieved line of length %zu :\n", read);
 		str_token = strtok_r(str, " \n", &saveptr1); // Split the string.
 
 		if(str_token == NULL) // Check str_token is NULL or not.
@@ -160,20 +166,27 @@ int main()
 
 
 
-	fclose(fptr); // Close file.
+	//fclose(fptr); // Close file.
 	free(str); // Free the memory.
 
-	fprintf(stderr, "Print result : \n");
+	// Check file exist.
+	//if((fptr = fopen("output.txt", "w")) == NULL) {
+	//	fprintf(stderr, "open_file_error\n");
+	//	exit(1);
+	//}
+
+	fprintf(stderr, "Output file : output.txt \n");
 	list_for_each(list_head_iterator, &head) {
 
 		link_list = list_entry(list_head_iterator, struct Linked_list, list);
-		fprintf(stderr, "%s \n", link_list->str);
+		fprintf(stdout, "%s\n", link_list->str);
+		//fwrite(link_list->str,sizeof(link_list->str),1,fptr);
 		free(link_list->str); // Free the memory.
 		free(link_list); // Free the memory.
 
 	}
 
-
+	//fclose(fptr);
 
 	return 0 ;
 
