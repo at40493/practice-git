@@ -1,0 +1,6 @@
+add apple
+add tree
+append apple the
+insert tree on
+del the
+
