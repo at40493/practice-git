@@ -1,14 +1,14 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<errno.h>
-#include<limits.h>
-#include<assert.h>
-#include"list.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <assert.h>
+#include "list.h"
+
+void freememory(char*, struct list_head*);
 
 
-struct Linked_list {
-
+struct linked_list {
 	char *str ;
 	struct list_head list;
 };
@@ -17,177 +17,180 @@ int main(int argc, char *argv[])
 {
 
 	LIST_HEAD(head); // Create the list head.
-	struct Linked_list *link_list, *link_list_match ;
+	struct linked_list *link_list_new, *link_list_match;
 	struct list_head *list_head_iterator, *list_head_temp;
-	char *str = NULL, *str_token = NULL, *str_token_next = NULL, emptyStr = '\0';
-	char *saveptr1, *endptr;
+	char *str = NULL, *str_token_operator, *str_token_match, *str_token_str, *str_token_next;
 	size_t len = 0;
-	ssize_t read;
-	FILE *fptr;
-	/*
-	if(argc == 2) {
-		fprintf(stderr, "Usage: ./hellomake  [Input file name]\n");
-		exit(1);
-	}
-	//fprintf(stderr,"Input file : %d\n",argc);
-	fprintf(stderr, "Input file : %s\n", argv[1]);
-	// Check file exist.
-	if((fptr = fopen(argv[1], "r")) == NULL) {
-		printf("Open_file_error\n");
-		exit(1);
-	}
-	*/
-	errno = 0 ; /* To distinguish success/failure after call */
-	while((read = getline(&str, &len, stdin)) != -1) {	// Scan the intput file
-		//fprintf(stderr, "Retrieved line of length %zu :\n", read);
-		str_token = strtok_r(str, " \n", &saveptr1); // Split the string.
 
-		if(str_token == NULL) // Check str_token is NULL or not.
-			str_token = &emptyStr ; // emptyStr = '\0'
+	while(getline(&str, &len, stdin) != -1) {	// Scan the intput file
+		
+		str_token_operator = strtok_r(str, " \n", &str_token_next); // Split the string.
 
-		if(!strcmp(str_token, "add")) { // Add
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the string.
-			if(str_token != NULL) {
-				link_list = malloc(sizeof(struct Linked_list));
-				link_list->str = malloc((strlen(str_token) + 1) * sizeof(char *));
-				if(link_list && link_list->str) { // link list not NULL
-					strcpy(link_list->str, str_token); // Convert char *str_token to char str[]
+		if(str_token_operator == NULL) // Check str_token is NULL or not.
+			continue ; // Do next line.
 
-					//tmp -> str = pch ;
-					list_add_tail(&link_list->list, &head);
-				} else { // link list is NULL.
-					printf("malloc error \n");
-					exit(1);
+		if(strcmp(str_token_operator, "add") == 0) { // Add
+			//add <str>:把str加到link list的尾巴
+			str_token_str = strtok_r(NULL, " \n", &str_token_next); // Split the string.
+			if(str_token_str == NULL) {
+				//Incorrect add format
+				fprintf(stderr, "Incorrect add format\n");
+				continue;
+			}
+			link_list_new = malloc(sizeof(struct linked_list));
+			if(link_list_new == NULL) {
+				fprintf(stderr, "Malloc error from link_list_new \n");
+				freememory(str, &head);
+			}
 
+			link_list_new->str = malloc((strlen(str_token_str) + 1) * sizeof(char *));
+			if(link_list_new->str == NULL) { // link list  NULL
+				fprintf(stderr, "Malloc error from string : %s \n", link_list_new->str);
+				free(link_list_new);
+				freememory(str, &head);
+
+			}
+			strcpy(link_list_new->str, str_token_str); // Copy string
+
+			list_add_tail(&link_list_new->list, &head);
+
+
+		} else if(strcmp(str_token_operator, "del") == 0) {
+			str_token_str = strtok_r(NULL, " \n", &str_token_next); // Split the str.
+			if(str_token_str == NULL) {
+				//Incorrect del format
+				fprintf(stderr, "Incorrect del format\n");
+				continue;
+			}
+			list_for_each_safe(list_head_iterator, list_head_temp , &head) {
+
+				link_list_match = list_entry(list_head_iterator, struct linked_list, list);
+
+				// Find the string which wants to delete.
+				if(strcmp(link_list_match->str, str_token_str) == 0) {
+					list_del(&link_list_match->list);
+					free(link_list_match->str); // Free the memory.
+					free(link_list_match); // Free the memory
+
+					break;
 				}
 			}
-		} else if(!strcmp(str_token, "del")) {
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
-			if(str_token != NULL) {
-				list_for_each_safe(list_head_iterator, list_head_temp , &head) {
 
-					//number = strtol(pch, &endptr, 10);
+		} else if(strcmp(str_token_operator, "insert") == 0) { //insert <match> <str>: 在找到的match前，加入str
+			str_token_match = strtok_r(NULL, " \n", &str_token_next); // Split the str. <match>
+			str_token_str = strtok_r(NULL, " \n", &str_token_next); // Split the str. <str>
 
-					/* Check for various possible errors */
-					/*
-					if ((errno == ERANGE && (number == LONG_MAX || number == LONG_MIN))
-					  || (errno != 0 && number == 0)) {
-					perror("strtol");
-					exit(EXIT_FAILURE);
-					}
-
-					if (endptr == pch) {
-					fprintf(stderr, "No digits were found\n");
-					exit(EXIT_FAILURE);
-					}
-					*/
-					link_list = list_entry(list_head_iterator, struct Linked_list, list);
-
-					// Find the string which wants to delete.
-					if(!strcmp(link_list->str, str_token)) {
-						list_del(&link_list->list);
-						free(link_list->str); // Free the memory.
-						free(link_list); // Free the memory
-
-						break;
-					}
-				}
+			if(str_token_match == NULL || str_token_str == NULL) { // Check the insert format
+				//Incorrect insert format
+				fprintf(stderr, "Incorrect insert format\n");
+				continue;
 			}
-		} else if(!strcmp(str_token, "insert")) { //insert <match> <str>: 在找到的match前，加入str
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str. <match>
-			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str. <str>
+			list_for_each(list_head_iterator, &head) {
 
-			if(str_token != NULL && str_token_next != NULL) { // Check the insert format
-				list_for_each(list_head_iterator, &head) {
+				link_list_match = list_entry(list_head_iterator, struct linked_list, list);
 
-					link_list_match = list_entry(list_head_iterator, struct Linked_list, list);
+				if(strcmp(str_token_match, link_list_match->str) == 0) {
 
-					if(!strcmp(str_token, link_list_match->str)) {
-						//str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
-
-						link_list = malloc(sizeof(struct Linked_list));
-						link_list->str = malloc((strlen(str_token_next) + 1) * sizeof(char *));
-						if(link_list && link_list->str) { // link_list not NULL
-							strcpy(link_list->str, str_token_next); // Convert char *str_token to char str[]
-
-							list_add_tail(&link_list->list, &link_list_match->list); // list_add_tail(new,head)
-							break;
-						} else { // link_list is NULL.
-							printf("malloc error \n");
-							exit(1);
-
-						}
+					link_list_new = malloc(sizeof(struct linked_list));
+					if(link_list_new == NULL) {
+						fprintf(stderr, "Malloc error from link_list_new \n");
+						freememory(str, &head);
 					}
+
+					link_list_new->str = malloc((strlen(str_token_str) + 1) * sizeof(char *));
+					if(link_list_new->str == NULL) {
+						fprintf(stderr, "Malloc error from string : %s \n", link_list_new->str);
+						free(link_list_new);
+						freememory(str, &head);
+					}
+
+					strcpy(link_list_new->str, str_token_str); // Copy string
+
+					list_add_tail(&link_list_new->list, &link_list_match->list); // list_add_tail(new,head)
+					break;
 
 				}
+
 			}
-		} else if(!strcmp(str_token, "append")) {  //append <match> <str>: 找到的match後，加入str
-			str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str <match>
-			str_token_next = strtok_r(NULL, " \n", &saveptr1); // Split the str <str>
 
-			if(str_token != NULL && str_token_next != NULL) { // Check the append format
+		} else if(strcmp(str_token_operator, "append") == 0) {
+			//append <match> <str>: 找到的match後，加入str
+			str_token_match = strtok_r(NULL, " \n", &str_token_next); // Split the str <match>
+			str_token_str = strtok_r(NULL, " \n", &str_token_next); // Split the str <str>
 
-				//fprintf(stderr, "1 str_token = %d\n", sizeof(str));
-				//fprintf(stderr, "1 str_token = %s\n", str_token_next);
+			if(str_token_match == NULL || str_token_str == NULL) { // Check the append format
+				//Incorrect append format
+				fprintf(stderr, "Incorrect append format\n");
+				continue;
+			}
+			//fprintf(stderr, "1 str_token = %d\n", sizeof(str));
+			//fprintf(stderr, "1 str_token = %s\n", str_token_next);
 
-				list_for_each(list_head_iterator, &head) {
+			list_for_each(list_head_iterator, &head) {
 
-					link_list_match = list_entry(list_head_iterator, struct Linked_list, list);
+				link_list_match = list_entry(list_head_iterator, struct linked_list, list);
 
-					if(!strcmp(str_token, link_list_match->str)) { // Find the match.
-						//str_token = strtok_r(NULL, " \n", &saveptr1); // Split the str.
-						//fprintf(stderr, "2 str_token = %08x\n", str_token);
-						//fprintf(stderr, "2 str_token = %s\n", str_token);
+				if(strcmp(str_token_match, link_list_match->str) == 0) { // Find the match.
 
-						link_list = malloc(sizeof(struct Linked_list));
-						link_list->str = malloc((strlen(str_token_next) + 1) * sizeof(char *));
+					//fprintf(stderr, "2 str_token = %08x\n", str_token);
+					//fprintf(stderr, "2 str_token = %s\n", str_token);
 
-						if(link_list && link_list->str) { // link_list not NULL
-							//printf("%s \n",str_token);
-							//printf("%d \n",strlen(str_token)+1);
-							// 重設所有字元為空字元
-							//memset(link_list->str, '\0', sizeof(link_list->str));
-							strcpy(link_list->str, str_token_next); // Convert char *str_token to char str[]
-							//strncat(emptyStr, link_list->str, strlen((link_list->str)-1));
-							//link_list_match = list_next_entry(link_list_match, list);
-							list_add(&link_list->list, &link_list_match->list); // list_add(new,head)
-							break;
-						} else { // link_list is NULL.
-							printf("malloc error \n");
-							exit(1);
-
-						}
+					link_list_new = malloc(sizeof(struct linked_list));
+					if(link_list_new == NULL) {
+						fprintf(stderr, "Malloc error from link_list_new \n");
+						freememory(str, &head);
 					}
 
+					link_list_new->str = malloc((strlen(str_token_str) + 1) * sizeof(char *));
+					if(link_list_new->str == NULL) {
+						fprintf(stderr, "Malloc error from string : %s \n", link_list_new->str);
+						free(link_list_new);
+						freememory(str, &head);
+					}
+					strcpy(link_list_new->str, str_token_str); // Copy string
+
+					list_add(&link_list_new->list, &link_list_match->list); // list_add(new,head)
+					break;
+
 				}
+
 			}
+
 		}
 	}
 
-
-
-	//fclose(fptr); // Close file.
 	free(str); // Free the memory.
-
-	// Check file exist.
-	//if((fptr = fopen("output.txt", "w")) == NULL) {
-	//	fprintf(stderr, "open_file_error\n");
-	//	exit(1);
-	//}
 
 	fprintf(stderr, "Output file : output.txt \n");
 	list_for_each(list_head_iterator, &head) {
 
-		link_list = list_entry(list_head_iterator, struct Linked_list, list);
-		fprintf(stdout, "%s\n", link_list->str);
-		//fwrite(link_list->str,sizeof(link_list->str),1,fptr);
-		free(link_list->str); // Free the memory.
-		free(link_list); // Free the memory.
+		link_list_new = list_entry(list_head_iterator, struct linked_list, list);
+		fprintf(stderr, "%s\n", link_list_new->str);
+		fprintf(stdout, "%s\n", link_list_new->str);
+
+		free(link_list_new->str);// Free the memory.
+		free(link_list_new);// Free the memory.
 
 	}
 
-	//fclose(fptr);
+
 
 	return 0 ;
 
+}
+
+void freememory(char *str, struct list_head *head)
+{
+	struct list_head *list_head_iterator;
+	// Free the memory.
+	free(str);
+
+	list_for_each(list_head_iterator, head) {
+
+		free(list_entry(list_head_iterator, struct linked_list, list)->str);
+		free(list_entry(list_head_iterator, struct linked_list, list));
+
+	}
+
+	exit(1);
 }
