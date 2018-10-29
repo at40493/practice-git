@@ -5,7 +5,10 @@
 	homework.c - Main program, use stdin to input data, and it have add, 
 			 insert, append and del option, print the output result to stdout.
 	list.h - The <linux/list.h> header v4.18.14.
-
+	list_private.h - Define the functions and struct for list.h
+	operator.h - Define the function interface and struct.
+	operator.c - Implement the operator functions.
+	
 Usage:
 	
 	cat <input file> | ./<program name> > <output file>
