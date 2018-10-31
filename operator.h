@@ -1,20 +1,33 @@
+#ifndef _OPERATOR_H
+#define _OPERATOR_H
 
+#include "list.h"
 
-// Linked-list node for word.
-struct list_node_word {
-	char *str ;
-	struct list_head list;
+// Word struct.
+struct words {
+    char *str ;
+    struct list_head list;
 };
 
+// Create word list.
+void words_init(struct words *words);
 // Add word function
-bool add_word(char *str_token_str, struct list_head *head);
+int words_add(struct words *words, char *word_new);
 // Del word function
-void del_word(char *str_token_str, struct list_head *head);
+int words_del(struct words *words, char *word_match);
 // Insert word function 找到的match前，加入str
-bool insert_word(char *str_token_match, char *str_token_str, struct list_head *head);
+int words_insert(struct words *words, char *word_new, char *word_match);
 // Append word function 找到的match後，加入str
-bool append_word(char *str_token_match, char *str_token_str, struct list_head *head);
+int words_append(struct words *words, char *word_new, char *word_match);
 // Free the data
-void free_data(char *str, struct list_head *head);
+void words_cleanup(struct words *words);
 // Print the result
-void list_print(struct list_head *head);
+void words_print(struct words *words);
+// Check empty
+int words_empty(struct words *words);
+
+#endif
+
+
+
+
