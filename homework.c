@@ -7,10 +7,15 @@
 int main(int argc, char *argv[])
 {
 	struct words words;
-	words_init(&words);// Create the list head.
-
+	int ret = 0;
 	char *str = NULL, *str_token_operator, *str_token_match, *str_token_str, *str_token_next;
 	size_t len = 0;
+
+	if(words_init(&words) != 0) {// Create head.
+		fprintf(stderr, "Initial failed\n");
+		ret = -1;
+		goto exit;
+	}
 
 	while(getline(&str, &len, stdin) != -1) {	// Scan the intput file
 		str_token_operator = strtok_r(str, " \n", &str_token_next); // Split the string.
@@ -28,7 +33,8 @@ int main(int argc, char *argv[])
 			}
 			if(words_add(&words, str_token_str) != 0) { // Add failed
 				fprintf(stderr, "Add failed\n");
-				goto cleanup;
+				ret = -1;
+				goto exit;
 			}
 
 		} else if(strcmp(str_token_operator, "del") == 0) {
@@ -41,7 +47,8 @@ int main(int argc, char *argv[])
 
 			if(words_del(&words, str_token_str) != 0) { // Del failed
 				fprintf(stderr, "Del failed\n");
-				goto cleanup;
+				ret = -1;
+				goto exit;
 			}
 
 		} else if(strcmp(str_token_operator, "insert") == 0) { //insert <match> <str>: 在找到的match前，加入str
@@ -56,7 +63,8 @@ int main(int argc, char *argv[])
 
 			if(words_insert(&words, str_token_str, str_token_match) != 0) { // Insert failed.
 				fprintf(stderr, "Insert failed\n");
-				goto cleanup;
+				ret = -1; //
+				goto exit;
 			}
 
 		} else if(strcmp(str_token_operator, "append") == 0) {
@@ -74,27 +82,26 @@ int main(int argc, char *argv[])
 
 			if(words_append(&words, str_token_str, str_token_match) != 0) { // Append failed.
 				fprintf(stderr, "Append failed\n");
-				goto cleanup;
+				ret = -1;
+				goto exit;
 			}
 		}
 	}
 
-	fprintf(stderr, "Output file : output.txt \n");
-	words_print(&words); // Print the result.
-	if(words_empty(&words) == 0) // Words isn't empty
-		words_cleanup(&words); // Words clean up
+	//fprintf(stderr, "Output file : output.txt \n");
+	if(words_print(&words) != 0) { // Print the result.
+		ret = -1;
+		goto exit;
+	}
+exit:
+	//CLEANUP
+	if(words_deinit(&words) != 0) {// Words clean up
+		fprintf(stderr, "Clean up failed\n");
+		ret = -1;
+	}
 	if(str != NULL) // Str not NULL
 		free(str);
-	return 0;
-
-cleanup:
-	if(words_empty(&words) == 0) // Words isn't empty
-		words_cleanup(&words); // Words clean up
-	if(str != NULL) // Str not NULL
-		free(str);
-	fprintf(stderr, "Error\n");
-	return -1;
-
+	return ret;
 }
 
 
