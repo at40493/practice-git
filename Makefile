@@ -1,22 +1,21 @@
-INPUT = cat input.txt | ./hellomake
+INPUT = cat input.txt | ./homework
+SRS = homework.c operator.c
+OBJS = $(SRS:.c=.o)
 
 all: style test valgrind 
  
 style:  
 	astyle --style=linux --indent=tab --pad-oper --unpad-paren homework.c operator.c
 
-hellomake: homework.o operator.o
-	gcc -o hellomake homework.o operator.o
+homework: $(OBJS)
+	gcc -o $@ $^
 
-homework.o: homework.c operator.h 
-	gcc -c homework.c
+%.o:%.c operator.h list.h list_private.h
+	gcc -c $<
 
-operator.o: operator.c operator.h list.h list_private.h
-	gcc -c operator.c 
-
-test : hellomake
-	$(INPUT) > output.txt
+test : homework
+	$(INPUT) | tee output.txt
 
 valgrind: 
-	valgrind --leak-check=full $(INPUT) > output.txt
+	valgrind --leak-check=full $(INPUT) | tee output.txt
 
