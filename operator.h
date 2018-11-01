@@ -10,7 +10,7 @@ struct words {
 };
 
 // Create word list.
-void words_init(struct words *words);
+int words_init(struct words *words);
 // Add word function
 int words_add(struct words *words, char *word_new);
 // Del word function
@@ -20,11 +20,9 @@ int words_insert(struct words *words, char *word_new, char *word_match);
 // Append word function 找到的match後，加入str
 int words_append(struct words *words, char *word_new, char *word_match);
 // Free the data
-void words_cleanup(struct words *words);
+int words_deinit(struct words *words);
 // Print the result
-void words_print(struct words *words);
-// Check empty
-int words_empty(struct words *words);
+int words_print(struct words *words);
 
 #endif
 
