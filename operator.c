@@ -3,16 +3,25 @@
 #include <string.h>
 #include "operator.h"
 
-void words_init(struct words *words)
+int words_init(struct words *words)
 {
+	if(words == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
 	// Create list head.
-	LIST_HEAD(name);
-	list_replace(&name, &words->list);
+	INIT_LIST_HEAD(&words->list);
+	return 0;
 }
 //add <str>:把str加到link list的尾巴
 int words_add(struct words *words, char *word_new)
 {
 	struct words *list_node_new;
+
+	if(words == NULL || word_new == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
 
 	list_node_new = malloc(sizeof(struct words));
 	if(list_node_new == NULL) {
@@ -36,6 +45,10 @@ int words_del(struct words *words, char *word_match)
 	struct words *list_node_match;
 	struct list_head *list_words_iterator, *list_words_temp;
 
+	if(words == NULL || word_match == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
 	list_for_each_safe(list_words_iterator, list_words_temp, &words->list) {
 		list_node_match = list_entry(list_words_iterator, struct words, list);
 
@@ -55,6 +68,11 @@ int words_insert(struct words *words, char *word_new, char *word_match)
 {
 	struct words *list_node_new, *list_node_match;
 	struct list_head *list_words_iterator;
+
+	if(words == NULL || word_new == NULL || word_match == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
 
 	list_for_each(list_words_iterator, &words->list) {
 		list_node_match = list_entry(list_words_iterator, struct words, list);
@@ -88,6 +106,11 @@ int words_append(struct words *words, char *word_new, char *word_match)
 	struct words *list_node_new, *list_node_match;
 	struct list_head *list_words_iterator;
 
+	if(words == NULL || word_new == NULL || word_match == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
+
 	list_for_each(list_words_iterator, &words->list) {
 		list_node_match = list_entry(list_words_iterator, struct words, list);
 
@@ -116,30 +139,41 @@ int words_append(struct words *words, char *word_new, char *word_match)
 	return -1;
 }
 // Free the data
-void words_cleanup(struct words *words)
+int words_deinit(struct words *words)
 {
 	struct list_head *list_words_iterator, *list_words_temp;
+	struct words *word;
 	// Free the memory.
 
-	list_for_each_safe(list_words_iterator, list_words_temp, &words->list) {
-		free(list_entry(list_words_iterator, struct words, list)->str);
-		free(list_entry(list_words_iterator, struct words, list));
+	if(words == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
 	}
+
+	list_for_each_safe(list_words_iterator, list_words_temp, &words->list) {
+		word = list_entry(list_words_iterator, struct words, list);
+		free(word->str);
+		free(word);
+	}
+
+	return 0;
 }
 // Print the result
-void words_print(struct words *words)
+int words_print(struct words *words)
 {
 	struct list_head *list_words_iterator, *list_words_temp;
+	struct words *word;
+	
+	if(words == NULL) {
+		fprintf(stderr, "The input is NULL \n");
+		return -1;
+	}
 
 	list_for_each_safe(list_words_iterator, list_words_temp, &words->list) {
-		fprintf(stderr, "%s\n", list_entry(list_words_iterator, struct words, list)->str);
-		fprintf(stdout, "%s\n", list_entry(list_words_iterator, struct words, list)->str);
+		word = list_entry(list_words_iterator, struct words, list);
+		fprintf(stdout, "%s\n", word->str);
 	}
-}
-
-int words_empty(struct words *words)
-{
-	return list_empty(&words->list);
+	return 0;
 }
 
 
